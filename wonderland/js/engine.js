@@ -13,7 +13,7 @@ var renderer = new THREE.WebGLRenderer();
 renderer.setClearColor( 0xcccccc );
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-
+var landVolume;
 var updateScene;
 
 var objects = [];
@@ -30,12 +30,13 @@ var render = function ()
 	updateScene();
 	controls.isOnObject( false );
 	ray.ray.origin.copy( controls.getObject().position );
-	ray.ray.origin.y -= 10;
+	ray.ray.origin.y -= (userHeight - (userHeight / 14) + .01);
 	var intersections = ray.intersectObjects( objects );
 	if ( intersections.length > 0 ) 
 	{
+		console.log("intersection");
 		var distance = intersections[ 0 ].distance;
-		if ( distance > 0 && distance < 10 ) 
+		if ( distance > 0 && distance < 1 ) 
 		{
 			controls.isOnObject( true );
 		}
@@ -68,7 +69,7 @@ THREE.PointerLockControls = function ( camera )
 	pitchObject.add( camera );
 
 	var yawObject = new THREE.Object3D();
-	yawObject.position.y = eyeLevel;
+	yawObject.position.y = (userHeight / 2);
 	yawObject.add( pitchObject );
 
 	var moveForward = false;
@@ -132,23 +133,24 @@ THREE.PointerLockControls = function ( camera )
 	{
 		switch( event.keyCode ) 
 		{
-			case 38: // up
 			case 87: // w
+			case 38: // up
+			
 				moveForward = false;
 				break;
-
-			case 37: // left
+			
 			case 65: // a
+			case 37: // left
 				moveLeft = false;
 				break;
-
-			case 40: // down
+				
 			case 83: // s
+			case 40: // down
 				moveBackward = false;
 				break;
 
-			case 39: // right
 			case 68: // d
+			case 39: // right
 				moveRight = false;
 				break;
 		}
@@ -239,7 +241,9 @@ function onWindowResize()
 
 function setupEngine()
 {
-	scene.fog = new THREE.Fog( 0xff00ff, 10, 100 );
+	renderer.shadowMapEnabled = true;
+	renderer.shadowMapSoft = true;
+	scene.fog = new THREE.FogExp2( 0xff00ff, .005 );
 	controls = new THREE.PointerLockControls( camera );
 	scene.add( controls.getObject() );
 	ray = new THREE.Raycaster();
@@ -292,34 +296,22 @@ function setupEngine()
 		// Ask the browser to lock the pointer
 			element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
 
-			if ( /Firefox/i.test( navigator.userAgent ) ) 
+			var fullscreenchange = function ( event ) 
 			{
-				var fullscreenchange = function ( event ) 
+				if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) 
 				{
-					if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) 
-					{
-
-						document.removeEventListener( 'fullscreenchange', fullscreenchange );
-						document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
-
-						element.requestPointerLock();
-					}
-
+					document.removeEventListener( 'fullscreenchange', fullscreenchange );
+					document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
 				}
-
-				document.addEventListener( 'fullscreenchange', fullscreenchange, false );
-				document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
-
-				element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
-
-				element.requestFullscreen();
-
-			} 
-			else 
-			{
-				element.requestPointerLock();
 			}
 
+			document.addEventListener( 'fullscreenchange', fullscreenchange, false );
+			document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
+
+			element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
+			element.requestFullscreen();
+
+			element.requestPointerLock();
 		}, false );
 
 	}
